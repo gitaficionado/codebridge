@@ -31,3 +31,26 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Local Spring Boot configurations
+application-local.properties
+application-local.yml
+application-local.yaml
+
+# API keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local IDE and build files
+.idea/
+*.iml
+target/
+
