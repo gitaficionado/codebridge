@@ -26,3 +26,6 @@
 # Operating system files
 .DS_Store
 Thumbs.db
+
+
+**/http-client.private.env.json
