@@ -3,6 +3,7 @@ package com.codebridge.backend.controller;
 
 import com.codebridge.backend.dto.MavenComparisonRequest;
 import com.codebridge.backend.dto.MavenComparisonResponse;
+import com.codebridge.backend.maven.ConflictSeverity;
 import com.codebridge.backend.maven.MavenDependencyConflict;
 import com.codebridge.backend.maven.MavenRepositoryComparisonService;
 
@@ -34,7 +35,7 @@ class MavenComparisonControllerTest {
     }
 
     @Test
-    void shouldReturnDependencyConflicts() {
+    void shouldReturnDependencyConflictsWithSeverity() {
 
         MavenComparisonRequest request = new MavenComparisonRequest(
                 EXISTING_URL,
@@ -70,8 +71,14 @@ class MavenComparisonControllerTest {
 
         MavenComparisonResponse result = response.getBody();
 
-        assertEquals("example/existing-app", result.existingRepository());
-        assertEquals("example/incoming-app", result.incomingRepository());
+        assertEquals(
+                "example/existing-app",
+                result.existingRepository()
+        );
+        assertEquals(
+                "example/incoming-app",
+                result.incomingRepository()
+        );
         assertEquals(12, result.existingDependencyCount());
         assertEquals(15, result.incomingDependencyCount());
         assertEquals(1, result.potentialConflictCount());
@@ -85,6 +92,12 @@ class MavenComparisonControllerTest {
         assertEquals("1.7.36", actualConflict.existingVersion());
         assertEquals("2.0.17", actualConflict.incomingVersion());
 
+        // Verify that the conflict has the correct severity.
+        assertEquals(
+                ConflictSeverity.HIGH,
+                actualConflict.severity()
+        );
+
         verify(comparisonService).analyzeRepositories(
                 EXISTING_URL,
                 INCOMING_URL
@@ -92,7 +105,7 @@ class MavenComparisonControllerTest {
     }
 
     @Test
-    void shouldReturnEmptyListWhenNoConflictsExist() {
+    void shouldReturnEmptyConflictsWhenVersionsMatch() {
 
         MavenComparisonRequest request = new MavenComparisonRequest(
                 EXISTING_URL,
@@ -118,10 +131,50 @@ class MavenComparisonControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+
         assertEquals(5, response.getBody().existingDependencyCount());
         assertEquals(7, response.getBody().incomingDependencyCount());
         assertEquals(0, response.getBody().potentialConflictCount());
         assertTrue(response.getBody().conflicts().isEmpty());
+    }
+
+    @Test
+    void shouldIncludeMediumSeverityForMinorVersionDifference() {
+
+        MavenDependencyConflict conflict = new MavenDependencyConflict(
+                "org.example",
+                "example-library",
+                "2.0.0",
+                "2.1.0"
+        );
+
+        assertEquals(ConflictSeverity.MEDIUM, conflict.severity());
+    }
+
+    @Test
+    void shouldIncludeLowSeverityForPatchVersionDifference() {
+
+        MavenDependencyConflict conflict = new MavenDependencyConflict(
+                "org.example",
+                "example-library",
+                "2.0.16",
+                "2.0.17"
+        );
+
+        assertEquals(ConflictSeverity.LOW, conflict.severity());
+    }
+
+    @Test
+    void shouldIncludeUnknownSeverityForNonstandardVersions() {
+
+        MavenDependencyConflict conflict = new MavenDependencyConflict(
+                "org.example",
+                "example-library",
+                "1.0-SNAPSHOT",
+                "2.0-custom"
+        );
+
+        assertEquals(ConflictSeverity.UNKNOWN, conflict.severity());
     }
 
     @Test
