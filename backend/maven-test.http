@@ -1,0 +1,32 @@
+
+### 1. Get a fresh CSRF token
+GET http://localhost:8080/api/csrf
+Authorization: Basic {{username}} {{password}}
+
+> {%
+    client.global.set("csrfToken", response.body.token);
+%}
+
+
+### 2. Compare two public Maven repositories
+POST http://localhost:8080/api/maven/compare
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+X-XSRF-TOKEN: {{csrfToken}}
+
+{
+  "existingRepositoryUrl": "https://github.com/junit-team/junit4",
+  "incomingRepositoryUrl": "https://github.com/apache/commons-lang"
+}
+
+
+### 3. Test invalid GitHub URL validation
+POST http://localhost:8080/api/maven/compare
+Authorization: Basic {{username}} {{password}}
+Content-Type: application/json
+X-XSRF-TOKEN: {{csrfToken}}
+
+{
+  "existingRepositoryUrl": "https://evil.com/example/repository",
+  "incomingRepositoryUrl": "https://github.com/apache/commons-lang"
+}
