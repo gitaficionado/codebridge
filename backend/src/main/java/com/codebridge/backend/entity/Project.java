@@ -19,6 +19,11 @@ public class Project {
     @Column(name = "incoming_repo_url", nullable = false)
     private String incomingRepoUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProjectStatus status = ProjectStatus.PENDING;
+
+
     public Project() {
     }
 
@@ -49,4 +54,13 @@ public class Project {
     public void setIncomingRepoUrl(String incomingRepoUrl) {
         this.incomingRepoUrl = incomingRepoUrl;
     }
+
+    public ProjectStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ProjectStatus status) {
+        this.status = status;
+    }
+
 }

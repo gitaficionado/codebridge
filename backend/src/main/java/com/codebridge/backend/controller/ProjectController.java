@@ -1,7 +1,9 @@
+
 package com.codebridge.backend.controller;
 
 import com.codebridge.backend.dto.ProjectRequest;
 import com.codebridge.backend.entity.Project;
+import com.codebridge.backend.github.GitHubUrlParser;
 import com.codebridge.backend.service.ProjectService;
 
 import jakarta.validation.Valid;
@@ -17,14 +19,19 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final GitHubUrlParser githubUrlParser;
 
     public ProjectController(ProjectService projectService) {
         this.projectService = projectService;
+        this.githubUrlParser = new GitHubUrlParser();
     }
 
     @PostMapping
     public ResponseEntity<Project> createProject(
             @Valid @RequestBody ProjectRequest request) {
+
+        githubUrlParser.parse(request.existingRepoUrl());
+        githubUrlParser.parse(request.incomingRepoUrl());
 
         Project project = new Project();
         project.setName(request.name());

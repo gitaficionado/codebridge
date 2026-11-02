@@ -1,0 +1,8 @@
+### 1. Get public GitHub repository metadata
+GET http://localhost:8080/api/github/repositories/spring-projects/spring-boot
+Authorization: Basic {{username}} {{password}}
+
+
+### 2. Get repository that does not exist
+GET http://localhost:8080/api/github/repositories/codebridge-nonexistent-test-12345/missing-repo-98765
+Authorization: Basic {{username}} {{password}}

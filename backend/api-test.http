@@ -1,4 +1,3 @@
-
 ### 1. Get all projects
 GET http://localhost:8080/api/projects
 Authorization: Basic {{username}} {{password}}
@@ -26,7 +25,6 @@ X-XSRF-TOKEN: {{csrfToken}}
 }
 
 
-
 ### 4. Get project by ID
 GET http://localhost:8080/api/projects/1
 Authorization: Basic {{username}} {{password}}
@@ -49,6 +47,7 @@ X-XSRF-TOKEN: {{csrfToken}}
   "incomingRepoUrl": "https://github.com/example/project-b"
 }
 
+
 ### 7. Invalid project - empty name
 POST http://localhost:8080/api/projects
 Content-Type: application/json
@@ -61,6 +60,7 @@ X-XSRF-TOKEN: {{csrfToken}}
   "incomingRepoUrl": "https://github.com/example/project-b"
 }
 
+
 ### 8. Invalid project - incorrect GitHub URL
 POST http://localhost:8080/api/projects
 Content-Type: application/json
@@ -71,4 +71,17 @@ X-XSRF-TOKEN: {{csrfToken}}
   "name": "Invalid URL Test",
   "existingRepoUrl": "not-a-github-url",
   "incomingRepoUrl": "https://github.com/example/project-b"
+}
+
+
+### 9. Test default project status
+POST http://localhost:8080/api/projects
+Content-Type: application/json
+Authorization: Basic {{username}} {{password}}
+X-XSRF-TOKEN: {{csrfToken}}
+
+{
+  "name": "Status Test Project",
+  "existingRepoUrl": "https://github.com/example/backend-a",
+  "incomingRepoUrl": "https://github.com/example/backend-b"
 }
