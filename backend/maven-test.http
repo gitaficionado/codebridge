@@ -4,9 +4,21 @@ GET http://localhost:8080/api/csrf
 Authorization: Basic {{username}} {{password}}
 
 > {%
-    client.global.set("csrfToken", response.body.token);
-%}
+    const csrfCookies = response.cookiesByName("XSRF-TOKEN");
 
+    client.assert(
+        response.status === 200,
+        "CSRF request must return HTTP 200"
+    );
+
+    client.assert(
+        csrfCookies.length > 0,
+        "No XSRF-TOKEN cookie was issued"
+    );
+
+    // Use the plain cookie token, not the masked response.body.token.
+    client.global.set("csrfToken", csrfCookies[0].value);
+%}
 
 ### 2. Compare two public Maven repositories
 POST http://localhost:8080/api/maven/compare
@@ -18,7 +30,6 @@ X-XSRF-TOKEN: {{csrfToken}}
   "existingRepositoryUrl": "https://github.com/junit-team/junit4",
   "incomingRepositoryUrl": "https://github.com/apache/commons-lang"
 }
-
 
 ### 3. Test invalid GitHub URL validation
 POST http://localhost:8080/api/maven/compare
