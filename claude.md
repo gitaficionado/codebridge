@@ -2,7 +2,7 @@
 
 ## Tech Stack
 - Backend: Spring Boot (Java) running on port 8080
-- Frontend: React (Vite) + Tailwind CSS + shadcn/ui running on port 5173
+- Frontend: React (Vite) + TypeScript + MUI (Material UI / Material Design) running on port 5173
 
 ## API Routing
 - All frontend API calls must use relative paths starting with `/api` (handled by Vite proxy).

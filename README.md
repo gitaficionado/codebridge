@@ -6,7 +6,7 @@ The project has two separate apps:
 | Folder      | What                                                  | Port |
 |-------------|-------------------------------------------------------|------|
 | `backend/`  | Spring Boot 4 REST API (Java 21)                      | 8080 |
-| `frontend/` | React + TypeScript SPA (Vite, Tailwind CSS, shadcn/ui) | 5173 |
+| `frontend/` | React + TypeScript SPA (Vite, MUI / Material Design) | 5173 |
 
 In development the frontend calls relative `/api/...` URLs. The Vite dev server
 proxies them to the backend, so there is no CORS setup to worry about.
@@ -82,16 +82,22 @@ set the same values there.
 frontend/src
 ├── api/           Axios instance (+ CSRF), typed API service, mock API
 ├── components/
-│   ├── ui/        shadcn/ui primitives (button, card, input, table, …)
-│   ├── compare/   CompareForm, RepoCard, SummaryStats, ConflictTable, LoadingState
-│   └── layout/    AppHeader (backend status, dark mode)
-├── hooks/         useRepoComparison, useBackendHealth, useTheme
-├── lib/           cn() helper, owner/repo parsing
+│   ├── compare/   CompareForm, RepoCard, SummaryStats, ConflictTable, LoadingState, EmptyState
+│   └── layout/    AppHeader (backend status, light/dark toggle)
+├── hooks/         useRepoComparison, useBackendHealth
+├── lib/           owner/repo parsing
+├── theme.ts       Material Design theme (palette, Roboto, shapes, component defaults)
 └── types/api.ts   interfaces matching the backend DTOs
 ```
 
-To add more shadcn/ui components later, run `npx shadcn@latest add dialog` (or any other
-component) from `frontend/`. `components.json` is already configured.
+The UI is built with [MUI](https://mui.com/material-ui/) (Material UI), the React
+implementation of Google's Material Design. Colours, typography and component defaults
+live in `src/theme.ts`. Repository A uses the `primary` colour and repository B uses
+`secondary`.
+
+**Windows note:** MUI is plain JavaScript, so Windows Smart App Control doesn't block it.
+For the same reason, `package.json` overrides Rollup with its WebAssembly build
+(`@rollup/wasm-node`). Smart App Control blocks Rollup's native Windows binary.
 
 ## Troubleshooting
 
@@ -102,4 +108,5 @@ component) from `frontend/`. `components.json` is already configured.
 | "The backend rejected the login" | The credentials in `frontend/.env` don't match the backend's `dev` profile. |
 | "GitHub API rate limit reached" | Unauthenticated GitHub allows 60 requests/hour per IP, and each comparison uses about 4. Wait, or switch networks. |
 | "Root pom.xml not found" | The repository has no `pom.xml` at its root (e.g. a Gradle project, or the pom is in a subfolder). |
+| "An Application Control policy has blocked this file" | Windows Smart App Control blocked a native npm binary. Delete `frontend/node_modules` and `frontend/package-lock.json`, then run `npm install` again so the `rollup` override takes effect. |
 | `Port 5173 is in use` | Stop the other Vite server, or change `server.port` in `vite.config.ts`. |

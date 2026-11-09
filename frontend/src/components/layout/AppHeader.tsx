@@ -1,10 +1,19 @@
-import { GitCompareArrows, Moon, RefreshCw, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import AppBar from "@mui/material/AppBar";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import Toolbar from "@mui/material/Toolbar";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useColorScheme } from "@mui/material/styles";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useBackendHealth, type HealthStatus } from "@/hooks/useBackendHealth";
-import { useTheme } from "@/hooks/useTheme";
 import { USE_MOCK } from "@/api/codebridge";
-import { cn } from "@/lib/utils";
 
 const HEALTH_LABEL: Record<HealthStatus, string> = {
   checking: "Checking backend…",
@@ -12,58 +21,75 @@ const HEALTH_LABEL: Record<HealthStatus, string> = {
   offline: "Backend offline",
 };
 
-const HEALTH_DOT: Record<HealthStatus, string> = {
-  checking: "bg-amber-400 animate-pulse",
-  online: "bg-emerald-500",
-  offline: "bg-red-500",
+const HEALTH_COLOR: Record<HealthStatus, string> = {
+  checking: "warning.light",
+  online: "success.light",
+  offline: "error.light",
 };
 
 export function AppHeader() {
   const { status, recheck } = useBackendHealth();
-  const { theme, toggle } = useTheme();
+  const { mode, systemMode, setMode } = useColorScheme();
+  const resolvedMode = mode === "system" ? systemMode : mode;
+  const isDark = resolvedMode === "dark";
 
   return (
-    <header className="bg-background/80 sticky top-0 z-30 border-b backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg shadow-sm">
-          <GitCompareArrows className="size-5" aria-hidden="true" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate text-base leading-tight font-semibold tracking-tight">CodeBridge</p>
-          <p className="text-muted-foreground hidden truncate text-xs sm:block">
+    <AppBar position="sticky" color="primary" enableColorOnDark elevation={2}>
+      <Toolbar sx={{ gap: 1.5 }}>
+        <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "inherit", width: 40, height: 40 }}>
+          <CompareArrowsIcon />
+        </Avatar>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h6" component="h1" noWrap sx={{ lineHeight: 1.2 }}>
+            CodeBridge
+          </Typography>
+          <Typography
+            variant="caption"
+            noWrap
+            sx={{ opacity: 0.8, display: { xs: "none", sm: "block" } }}
+          >
             Repository dependency comparison
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
-        <div className="ml-auto flex items-center gap-2">
-          {USE_MOCK && (
-            <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300">
-              Mock data
-            </Badge>
-          )}
+        <Stack direction="row" spacing={1} sx={{ ml: "auto", alignItems: "center" }}>
+          {USE_MOCK && <Chip label="Mock data" color="warning" size="small" />}
 
-          <button
-            type="button"
-            onClick={() => void recheck()}
-            className="hover:bg-accent inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            title="Re-check GET /api/health"
-          >
-            <span className={cn("size-2 rounded-full", HEALTH_DOT[status])} aria-hidden="true" />
-            <span className="hidden sm:inline">{HEALTH_LABEL[status]}</span>
-            <span className="sr-only sm:hidden">{HEALTH_LABEL[status]}</span>
-            <RefreshCw className="text-muted-foreground size-3" aria-hidden="true" />
-          </button>
+          <Tooltip title="Re-check GET /api/health">
+            <Chip
+              size="small"
+              variant="outlined"
+              onClick={() => void recheck()}
+              aria-label={HEALTH_LABEL[status]}
+              icon={
+                <Box
+                  component="span"
+                  sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: HEALTH_COLOR[status], ml: "8px !important" }}
+                />
+              }
+              label={
+                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                  <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                    {HEALTH_LABEL[status]}
+                  </Box>
+                  <RefreshIcon sx={{ fontSize: 14, opacity: 0.8 }} />
+                </Stack>
+              }
+              sx={{ color: "inherit", borderColor: "rgba(255,255,255,0.5)" }}
+            />
+          </Tooltip>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggle}
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {theme === "dark" ? <Sun /> : <Moon />}
-          </Button>
-        </div>
-      </div>
-    </header>
+          <Tooltip title={isDark ? "Switch to light mode" : "Switch to dark mode"}>
+            <IconButton
+              color="inherit"
+              onClick={() => setMode(isDark ? "light" : "dark")}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Toolbar>
+    </AppBar>
   );
 }

@@ -1,12 +1,22 @@
 import { useState, type FormEvent } from "react";
-import { ArrowLeftRight, GitBranch, Search, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/Spinner";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CloseIcon from "@mui/icons-material/Close";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import SearchIcon from "@mui/icons-material/Search";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { parseRepoSlug, validateRepoInput, type RepoSlug } from "@/lib/repo";
-import { cn } from "@/lib/utils";
+import { MONO_FONT } from "@/theme";
 
 interface CompareFormProps {
   loading: boolean;
@@ -36,7 +46,8 @@ export function CompareForm({ loading, onCompare, onCancel }: CompareFormProps) 
     !errors.incoming &&
     values.existing.trim().toLowerCase() === values.incoming.trim().toLowerCase();
 
-  const showError = (field: Field) => (touched[field] || submitted) && errors[field];
+  const visibleError = (field: Field): string | null =>
+    touched[field] || submitted ? errors[field] : null;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,115 +66,125 @@ export function CompareForm({ loading, onCompare, onCancel }: CompareFormProps) 
     setTouched({ existing: false, incoming: false });
   };
 
-  const renderField = (field: Field, label: string, hint: string, accent: string) => {
-    const id = `repo-${field}`;
-    const errorId = `${id}-error`;
-    const error = showError(field);
+  const renderField = (field: Field, label: string, color: "primary" | "secondary") => {
+    const error = visibleError(field);
     return (
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <Label htmlFor={id} className="gap-2">
-          <span className={cn("size-2 rounded-full", accent)} aria-hidden="true" />
-          {label}
-          <span className="text-muted-foreground font-normal">{hint}</span>
-        </Label>
-        <div className="relative">
-          <GitBranch
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-            aria-hidden="true"
-          />
-          <Input
-            id={id}
-            value={values[field]}
-            onChange={(e) => setValues((v) => ({ ...v, [field]: e.target.value }))}
-            onBlur={() => setTouched((t) => ({ ...t, [field]: true }))}
-            placeholder="owner/repo"
-            autoComplete="off"
-            spellCheck={false}
-            disabled={loading}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : undefined}
-            className="h-11 pl-9 font-mono text-sm"
-          />
-        </div>
-        <p id={errorId} className={cn("min-h-4 text-xs", error ? "text-destructive" : "text-transparent")}>
-          {error || " "}
-        </p>
-      </div>
+      <TextField
+        id={`repo-${field}`}
+        label={label}
+        placeholder="owner/repo"
+        value={values[field]}
+        onChange={(e) => setValues((v) => ({ ...v, [field]: e.target.value }))}
+        onBlur={() => setTouched((t) => ({ ...t, [field]: true }))}
+        disabled={loading}
+        error={Boolean(error)}
+        helperText={error ?? " "}
+        color={color}
+        fullWidth
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <GitHubIcon fontSize="small" color={error ? "error" : color} />
+              </InputAdornment>
+            ),
+            sx: { fontFamily: MONO_FONT },
+          },
+          htmlInput: { autoComplete: "off", spellCheck: false },
+        }}
+      />
     );
   };
 
   return (
-    <Card className="gap-4">
-      <CardHeader>
-        <CardTitle className="text-lg">Compare two repositories</CardTitle>
-        <CardDescription>
-          Enter two public GitHub repositories with a root <code className="font-mono">pom.xml</code>.
-          CodeBridge compares their Maven dependencies side by side.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:gap-3">
-            {renderField("existing", "Repository A", "existing", "bg-indigo-500")}
+    <Card>
+      <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Compare two repositories
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Enter two public GitHub repositories with a root{" "}
+          <Box component="code" sx={{ fontFamily: MONO_FONT }}>pom.xml</Box>. CodeBridge compares their
+          Maven dependencies side by side.
+        </Typography>
 
-            <div className="flex justify-center md:pt-7">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={swap}
-                disabled={loading}
-                aria-label="Swap repositories"
-                title="Swap repositories"
-                className="h-11 w-11 rotate-90 rounded-full md:rotate-0"
-              >
-                <ArrowLeftRight />
-              </Button>
-            </div>
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={{ xs: 0, md: 2 }}
+            sx={{ alignItems: { md: "flex-start" } }}
+          >
+            {renderField("existing", "Repository A · existing", "primary")}
 
-            {renderField("incoming", "Repository B", "incoming", "bg-fuchsia-500")}
-          </div>
+            <Box sx={{ display: "flex", justifyContent: "center", pt: { md: 1 }, pb: { xs: 2, md: 0 } }}>
+              <Tooltip title="Swap repositories">
+                <span>
+                  <IconButton
+                    onClick={swap}
+                    disabled={loading}
+                    aria-label="Swap repositories"
+                    sx={{
+                      border: 1,
+                      borderColor: "divider",
+                      transform: { xs: "rotate(90deg)", md: "none" },
+                    }}
+                  >
+                    <SwapHorizIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Box>
+
+            {renderField("incoming", "Repository B · incoming", "secondary")}
+          </Stack>
 
           {submitted && sameRepo && (
-            <p className="text-destructive -mt-2 text-xs">Pick two different repositories to compare.</p>
+            <Typography variant="caption" color="error" component="p" sx={{ mb: 1 }}>
+              Pick two different repositories to compare.
+            </Typography>
           )}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-muted-foreground">Try:</span>
+          <Stack
+            direction={{ xs: "column-reverse", sm: "row" }}
+            spacing={2}
+            sx={{ mt: 1, justifyContent: "space-between", alignItems: { sm: "center" } }}
+          >
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", alignItems: "center" }}>
+              <Typography variant="caption" color="text.secondary">
+                Try:
+              </Typography>
               {EXAMPLES.map((example) => (
-                <button
+                <Chip
                   key={example.existing}
-                  type="button"
+                  size="small"
+                  variant="outlined"
                   disabled={loading}
                   onClick={() => fillExample(example)}
-                  className="bg-secondary hover:bg-accent hover:text-accent-foreground rounded-full px-2.5 py-1 font-mono transition-colors disabled:opacity-50"
-                >
-                  {example.existing.split("/")[1]} ↔ {example.incoming.split("/")[1]}
-                </button>
+                  label={`${example.existing.split("/")[1]} ↔ ${example.incoming.split("/")[1]}`}
+                  sx={{ fontFamily: MONO_FONT }}
+                />
               ))}
-            </div>
+            </Stack>
 
-            <div className="flex gap-2 sm:shrink-0">
+            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
               {loading && (
-                <Button type="button" variant="ghost" onClick={onCancel}>
-                  <X /> Cancel
+                <Button variant="text" onClick={onCancel} startIcon={<CloseIcon />}>
+                  Cancel
                 </Button>
               )}
-              <Button type="submit" size="lg" disabled={loading} className="min-w-36 flex-1 sm:flex-none">
-                {loading ? (
-                  <>
-                    <Spinner label="Comparing repositories" /> Comparing…
-                  </>
-                ) : (
-                  <>
-                    <Search /> Compare
-                  </>
-                )}
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <SearchIcon />}
+                sx={{ minWidth: 150, flexGrow: { xs: 1, sm: 0 } }}
+              >
+                {loading ? "Comparing…" : "Compare"}
               </Button>
-            </div>
-          </div>
-        </form>
+            </Stack>
+          </Stack>
+        </Box>
       </CardContent>
     </Card>
   );

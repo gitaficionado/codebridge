@@ -1,10 +1,19 @@
 import type { ReactNode } from "react";
-import { AlertTriangle, Code2, ExternalLink, GitBranch, Package } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import CallSplitIcon from "@mui/icons-material/CallSplit";
+import CodeIcon from "@mui/icons-material/Code";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { toGitHubUrl, toSlugString } from "@/lib/repo";
 import type { RepoSide } from "@/hooks/useRepoComparison";
-import { cn } from "@/lib/utils";
+import { MONO_FONT } from "@/theme";
 
 interface RepoCardProps {
   side: RepoSide;
@@ -13,57 +22,62 @@ interface RepoCardProps {
   dependencyCount: number;
 }
 
-const ROLE_STYLES = {
-  A: { stripe: "bg-indigo-500", chip: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300" },
-  B: { stripe: "bg-fuchsia-500", chip: "bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300" },
-} as const;
-
 export function RepoCard({ side, role, label, dependencyCount }: RepoCardProps) {
   const { slug, metadata, metadataError } = side;
-  const styles = ROLE_STYLES[role];
+  const color = role === "A" ? "primary" : "secondary";
   const name = metadata?.fullName ?? toSlugString(slug);
   const url = metadata?.htmlUrl ?? toGitHubUrl(slug);
 
   return (
-    <Card className="relative gap-5 overflow-hidden">
-      <div className={cn("absolute inset-x-0 top-0 h-1", styles.stripe)} aria-hidden="true" />
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <span className={cn("rounded-md px-2 py-0.5 text-xs font-semibold", styles.chip)}>
-            {role} · {label}
-          </span>
-        </div>
-        <CardTitle className="mt-2 font-mono text-lg break-all">{name}</CardTitle>
-        <CardDescription className="line-clamp-2">
-          {metadata?.description ||
-            (metadataError ? "Repository details unavailable." : "No description provided.")}
-        </CardDescription>
-        <CardAction>
-          <a
+    <Card sx={{ position: "relative", height: "100%" }}>
+      <Box sx={{ position: "absolute", inset: "0 0 auto 0", height: 4, bgcolor: `${color}.main` }} />
+      <CardContent sx={{ p: 3 }}>
+        <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+          <Chip label={`${role} · ${label}`} color={color} size="small" />
+          <Link
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs"
+            underline="hover"
+            variant="body2"
+            color="text.secondary"
+            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
           >
-            GitHub <ExternalLink className="size-3" aria-hidden="true" />
-          </a>
-        </CardAction>
-      </CardHeader>
+            GitHub <OpenInNewIcon sx={{ fontSize: 14 }} />
+          </Link>
+        </Stack>
 
-      <CardContent className="flex flex-col gap-4">
-        <dl className="grid grid-cols-3 gap-3">
-          <Stat icon={<Package />} label="Dependencies" value={String(dependencyCount)} emphasis />
-          <Stat icon={<Code2 />} label="Language" value={metadata?.language ?? "—"} />
-          <Stat icon={<GitBranch />} label="Branch" value={metadata?.defaultBranch ?? "—"} mono />
-        </dl>
+        <Typography variant="h6" component="h3" sx={{ fontFamily: MONO_FONT, wordBreak: "break-all" }}>
+          {name}
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            mt: 0.5,
+            minHeight: 40,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {metadata?.description ||
+            (metadataError ? "Repository details unavailable." : "No description provided.")}
+        </Typography>
+
+        <Box component="dl" sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, mt: 2, mb: 0 }}>
+          <Stat icon={<Inventory2OutlinedIcon />} label="Dependencies" value={String(dependencyCount)} emphasis />
+          <Stat icon={<CodeIcon />} label="Language" value={metadata?.language ?? "—"} />
+          <Stat icon={<CallSplitIcon />} label="Branch" value={metadata?.defaultBranch ?? "—"} mono />
+        </Box>
 
         {metadataError && (
-          <p className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          <Alert severity="warning" variant="outlined" sx={{ mt: 2, py: 0 }}>
             Couldn’t load repository details: {metadataError}
-          </p>
+          </Alert>
         )}
-        {metadata?.isPrivate && <Badge variant="destructive">Private repository</Badge>}
+        {metadata?.isPrivate && <Chip label="Private repository" color="error" size="small" sx={{ mt: 2 }} />}
       </CardContent>
     </Card>
   );
@@ -79,21 +93,31 @@ interface StatProps {
 
 function Stat({ icon, label, value, emphasis, mono }: StatProps) {
   return (
-    <div className="bg-muted/50 min-w-0 rounded-lg px-3 py-2.5">
-      <dt className="text-muted-foreground flex items-center gap-1.5 text-xs [&_svg]:size-3.5">
+    <Box sx={{ bgcolor: "action.hover", borderRadius: 2, px: 1.5, py: 1.25, minWidth: 0 }}>
+      <Typography
+        component="dt"
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: "flex", alignItems: "center", gap: 0.5, "& svg": { fontSize: 14 } }}
+      >
         {icon}
         {label}
-      </dt>
-      <dd
-        className={cn(
-          "mt-1 truncate",
-          emphasis ? "text-2xl font-semibold tabular-nums" : "text-sm font-medium",
-          mono && "font-mono",
-        )}
+      </Typography>
+      <Typography
+        component="dd"
         title={value}
+        noWrap
+        sx={{
+          m: 0,
+          mt: 0.5,
+          fontWeight: emphasis ? 600 : 500,
+          fontSize: emphasis ? 26 : 14,
+          lineHeight: emphasis ? 1.2 : 1.6,
+          fontFamily: mono ? MONO_FONT : undefined,
+        }}
       >
         {value}
-      </dd>
-    </div>
+      </Typography>
+    </Box>
   );
 }

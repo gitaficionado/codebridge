@@ -1,33 +1,61 @@
-import { GitCompareArrows, Layers, ShieldCheck, Zap } from "lucide-react";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import BoltIcon from "@mui/icons-material/Bolt";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import LayersIcon from "@mui/icons-material/Layers";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 
 const FEATURES = [
-  { icon: Layers, title: "Side-by-side", text: "See both repositories and their dependency counts together." },
-  { icon: Zap, title: "Version drift", text: "Spot shared libraries pinned to different versions." },
-  { icon: ShieldCheck, title: "Severity", text: "Major, minor and patch differences ranked for review." },
+  { icon: <LayersIcon />, title: "Side-by-side", text: "See both repositories and their dependency counts together." },
+  { icon: <BoltIcon />, title: "Version drift", text: "Spot shared libraries pinned to different versions." },
+  { icon: <VerifiedUserIcon />, title: "Severity", text: "Major, minor and patch differences ranked for review." },
 ];
 
 export function EmptyState() {
   return (
-    <section className="flex flex-col items-center gap-8 rounded-xl border border-dashed px-6 py-12 text-center">
-      <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
-        <GitCompareArrows className="size-7" aria-hidden="true" />
-      </div>
-      <div className="max-w-lg">
-        <h2 className="text-lg font-semibold">Pick two repositories to get started</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Results appear here: repository details side by side, a severity breakdown and every
-          dependency whose version differs.
-        </p>
-      </div>
-      <ul className="grid w-full max-w-3xl gap-4 sm:grid-cols-3">
-        {FEATURES.map(({ icon: Icon, title, text }) => (
-          <li key={title} className="bg-card rounded-lg border p-4 text-left">
-            <Icon className="text-primary size-5" aria-hidden="true" />
-            <p className="mt-2 text-sm font-medium">{title}</p>
-            <p className="text-muted-foreground mt-1 text-xs">{text}</p>
-          </li>
+    <Paper
+      variant="outlined"
+      sx={{ borderStyle: "dashed", py: 6, px: 3, textAlign: "center", bgcolor: "transparent" }}
+    >
+      <Avatar sx={{ bgcolor: "primary.main", width: 56, height: 56, mx: "auto" }}>
+        <CompareArrowsIcon />
+      </Avatar>
+      <Typography variant="h6" sx={{ mt: 2 }}>
+        Pick two repositories to get started
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520, mx: "auto", mt: 0.5 }}>
+        Results appear here: repository details side by side, a severity breakdown and every
+        dependency whose version differs.
+      </Typography>
+
+      <Box
+        component="ul"
+        sx={{
+          listStyle: "none",
+          p: 0,
+          m: 0,
+          mt: 4,
+          mx: "auto",
+          maxWidth: 840,
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+        }}
+      >
+        {FEATURES.map(({ icon, title, text }) => (
+          <Paper component="li" key={title} elevation={1} sx={{ p: 2.5, textAlign: "left" }}>
+            <Box sx={{ color: "primary.main", display: "flex" }}>{icon}</Box>
+            <Typography variant="subtitle2" sx={{ mt: 1 }}>
+              {title}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {text}
+            </Typography>
+          </Paper>
         ))}
-      </ul>
-    </section>
+      </Box>
+    </Paper>
   );
 }

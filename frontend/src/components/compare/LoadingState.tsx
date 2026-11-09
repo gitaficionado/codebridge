@@ -1,54 +1,62 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/Spinner";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CircularProgress from "@mui/material/CircularProgress";
+import Paper from "@mui/material/Paper";
+import Skeleton from "@mui/material/Skeleton";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 
 /** Spinner banner plus skeletons shaped like the results, shown while the backend works. */
 export function LoadingState() {
   return (
-    <section aria-busy="true" aria-label="Loading comparison" className="flex flex-col gap-6">
-      <div className="bg-card flex flex-col items-center gap-3 rounded-xl border px-6 py-8 text-center shadow-sm">
-        <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
-          <Spinner className="size-7" label="Comparing repositories" />
-        </div>
-        <div>
-          <p className="font-medium">Analyzing repositories…</p>
-          <p className="text-muted-foreground text-sm">
-            Fetching both <code className="font-mono">pom.xml</code> files from GitHub and comparing
-            dependency versions.
-          </p>
-        </div>
-      </div>
+    <Stack spacing={3} component="section" aria-busy="true" aria-label="Loading comparison">
+      <Paper elevation={1} sx={{ py: 5, px: 3, textAlign: "center" }}>
+        <CircularProgress size={52} thickness={4} aria-label="Comparing repositories" />
+        <Typography variant="subtitle1" sx={{ mt: 2, fontWeight: 500 }}>
+          Analyzing repositories…
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Fetching both pom.xml files from GitHub and comparing dependency versions.
+        </Typography>
+      </Paper>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" } }}>
         {[0, 1].map((i) => (
           <Card key={i}>
-            <CardHeader className="gap-3">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-6 w-2/3" />
-              <Skeleton className="h-4 w-full" />
-            </CardHeader>
-            <CardContent className="grid grid-cols-3 gap-3">
-              <Skeleton className="h-14" />
-              <Skeleton className="h-14" />
-              <Skeleton className="h-14" />
+            <CardContent>
+              <Skeleton width={110} height={28} />
+              <Skeleton width="65%" height={36} />
+              <Skeleton width="90%" />
+              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, mt: 2 }}>
+                {[0, 1, 2].map((j) => (
+                  <Skeleton key={j} variant="rounded" height={64} />
+                ))}
+              </Box>
             </CardContent>
           </Card>
         ))}
-      </div>
+      </Box>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(5, 1fr)" },
+        }}
+      >
         {[0, 1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-24 rounded-xl" />
+          <Skeleton key={i} variant="rounded" height={104} sx={{ borderRadius: 4 }} />
         ))}
-      </div>
+      </Box>
 
       <Card>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent>
           {[0, 1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-9" />
+            <Skeleton key={i} height={44} />
           ))}
         </CardContent>
       </Card>
-    </section>
+    </Stack>
   );
 }

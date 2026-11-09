@@ -1,8 +1,12 @@
-import { GitMerge } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
+import CardContent from "@mui/material/CardContent";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import MergeTypeIcon from "@mui/icons-material/MergeType";
 import { CONFLICT_SEVERITIES, type ConflictSeverity, type MavenSeveritySummary } from "@/types/api";
 import { SEVERITY_STYLES } from "@/components/compare/severity";
-import { cn } from "@/lib/utils";
 
 interface SummaryStatsProps {
   summary: MavenSeveritySummary;
@@ -11,7 +15,7 @@ interface SummaryStatsProps {
   onSelectSeverity: (severity: ConflictSeverity | null) => void;
 }
 
-const SUMMARY_KEY: Record<ConflictSeverity, keyof Omit<MavenSeveritySummary, "total">> = {
+const SUMMARY_KEY: Record<ConflictSeverity, "high" | "medium" | "low" | "unknown"> = {
   HIGH: "high",
   MEDIUM: "medium",
   LOW: "low",
@@ -21,14 +25,24 @@ const SUMMARY_KEY: Record<ConflictSeverity, keyof Omit<MavenSeveritySummary, "to
 /** KPI tiles. Clicking a severity tile filters the conflict table. */
 export function SummaryStats({ summary, total, activeSeverity, onSelectSeverity }: SummaryStatsProps) {
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Card className="col-span-2 gap-1 px-5 py-4 sm:col-span-1">
-          <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-            <GitMerge className="size-3.5" aria-hidden="true" /> Potential conflicts
-          </p>
-          <p className="text-3xl font-semibold tabular-nums">{total}</p>
-          <p className="text-muted-foreground text-xs">shared dependencies with different versions</p>
+    <Stack spacing={1.5}>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(5, 1fr)" },
+        }}
+      >
+        <Card sx={{ gridColumn: { xs: "span 2", sm: "auto" }, bgcolor: "primary.main", color: "primary.contrastText" }}>
+          <CardContent>
+            <Typography variant="caption" sx={{ display: "flex", alignItems: "center", gap: 0.5, opacity: 0.9 }}>
+              <MergeTypeIcon sx={{ fontSize: 16 }} /> Potential conflicts
+            </Typography>
+            <Typography sx={{ fontSize: 34, fontWeight: 600, lineHeight: 1.2 }}>{total}</Typography>
+            <Typography variant="caption" sx={{ opacity: 0.85 }}>
+              shared dependencies with different versions
+            </Typography>
+          </CardContent>
         </Card>
 
         {CONFLICT_SEVERITIES.map((severity) => {
@@ -36,42 +50,57 @@ export function SummaryStats({ summary, total, activeSeverity, onSelectSeverity 
           const count = summary[SUMMARY_KEY[severity]];
           const active = activeSeverity === severity;
           return (
-            <button
+            <Card
               key={severity}
-              type="button"
-              onClick={() => onSelectSeverity(active ? null : severity)}
-              aria-pressed={active}
-              className={cn(
-                "bg-card hover:border-ring/60 flex flex-col gap-1 rounded-xl border px-5 py-4 text-left shadow-sm transition-all",
-                active && "ring-ring/50 border-ring ring-[3px]",
-              )}
+              elevation={active ? 4 : 1}
+              sx={{
+                border: 2,
+                borderColor: active ? style.fill : "transparent",
+                transition: "box-shadow 150ms, border-color 150ms",
+              }}
             >
-              <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-                <span className={cn("size-2 rounded-full", style.dot)} aria-hidden="true" />
-                {style.label}
-              </span>
-              <span className="text-3xl font-semibold tabular-nums">{count}</span>
-              <span className="text-muted-foreground text-xs">{style.description}</span>
-            </button>
+              <CardActionArea
+                onClick={() => onSelectSeverity(active ? null : severity)}
+                aria-pressed={active}
+                sx={{ height: "100%" }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "flex", alignItems: "center", gap: 0.75, fontWeight: 500 }}
+                  >
+                    <Box component="span" sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: style.fill }} />
+                    {style.label}
+                  </Typography>
+                  <Typography sx={{ fontSize: 34, fontWeight: 600, lineHeight: 1.2 }}>{count}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {style.description}
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
           );
         })}
-      </div>
+      </Box>
 
       {total > 0 && (
-        <div className="bg-muted flex h-2 w-full overflow-hidden rounded-full" aria-hidden="true">
+        <Box
+          aria-hidden="true"
+          sx={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", bgcolor: "action.hover" }}
+        >
           {CONFLICT_SEVERITIES.map((severity) => {
             const count = summary[SUMMARY_KEY[severity]];
             if (!count) return null;
             return (
-              <div
+              <Box
                 key={severity}
-                className={cn("h-full", SEVERITY_STYLES[severity].bar)}
-                style={{ width: `${(count / total) * 100}%` }}
+                sx={{ bgcolor: SEVERITY_STYLES[severity].fill, width: `${(count / total) * 100}%` }}
               />
             );
           })}
-        </div>
+        </Box>
       )}
-    </div>
+    </Stack>
   );
 }
