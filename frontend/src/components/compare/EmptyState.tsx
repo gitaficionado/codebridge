@@ -1,11 +1,10 @@
-import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import BoltIcon from "@mui/icons-material/Bolt";
-import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import LayersIcon from "@mui/icons-material/Layers";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import logoMark from "@/assets/codebridge-mark.png";
 
 const FEATURES = [
   { icon: <LayersIcon />, title: "Side-by-side", text: "See both repositories and their dependency counts together." },
@@ -19,9 +18,7 @@ export function EmptyState() {
       variant="outlined"
       sx={{ borderStyle: "dashed", py: 6, px: 3, textAlign: "center", bgcolor: "transparent" }}
     >
-      <Avatar sx={{ bgcolor: "primary.main", width: 56, height: 56, mx: "auto" }}>
-        <CompareArrowsIcon />
-      </Avatar>
+      <Box component="img" src={logoMark} alt="" sx={{ height: 72, display: "block", mx: "auto" }} />
       <Typography variant="h6" sx={{ mt: 2 }}>
         Pick two repositories to get started
       </Typography>

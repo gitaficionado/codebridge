@@ -1,5 +1,4 @@
 import AppBar from "@mui/material/AppBar";
-import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
@@ -8,12 +7,12 @@ import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useColorScheme } from "@mui/material/styles";
-import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useBackendHealth, type HealthStatus } from "@/hooks/useBackendHealth";
 import { USE_MOCK } from "@/api/codebridge";
+import logoMark from "@/assets/codebridge-mark.png";
 
 const HEALTH_LABEL: Record<HealthStatus, string> = {
   checking: "Checking backend…",
@@ -36,19 +35,33 @@ export function AppHeader() {
   return (
     <AppBar position="sticky" color="primary" enableColorOnDark elevation={2}>
       <Toolbar sx={{ gap: 1.5 }}>
-        <Avatar sx={{ bgcolor: "rgba(255,255,255,0.18)", color: "inherit", width: 40, height: 40 }}>
-          <CompareArrowsIcon />
-        </Avatar>
+        <Box
+          sx={{
+            bgcolor: "#fff",
+            borderRadius: 2,
+            height: 40,
+            px: 0.75,
+            display: "flex",
+            alignItems: "center",
+            flexShrink: 0,
+            boxShadow: 1,
+          }}
+        >
+          <Box component="img" src={logoMark} alt="CodeBridge logo" sx={{ height: 26, display: "block" }} />
+        </Box>
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h6" component="h1" noWrap sx={{ lineHeight: 1.2 }}>
-            CodeBridge
+          <Typography variant="h6" component="h1" noWrap sx={{ lineHeight: 1.2, fontWeight: 700 }}>
+            Code
+            <Box component="span" sx={{ color: "#81d4fa" }}>
+              Bridge
+            </Box>
           </Typography>
           <Typography
             variant="caption"
             noWrap
-            sx={{ opacity: 0.8, display: { xs: "none", sm: "block" } }}
+            sx={{ opacity: 0.85, display: { xs: "none", sm: "block" } }}
           >
-            Repository dependency comparison
+            Bridge the Data, Compare the Code
           </Typography>
         </Box>
 
