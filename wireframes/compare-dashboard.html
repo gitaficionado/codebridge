@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repo Compare Wireframe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Layout: top bar, compare bar, then two equal entity columns (A | B) that stack below 768px; summary + diff table span both. */
+    --paper: #f3f4f7;
+    --surface: #ffffff;
+    --ink: #1c2230;
+    --muted: #677085;
+    --line: #c8cdd8;
+    --fill: #e4e8ef;
+    --accent: #2563d9;
+    --diff: #fff4d6;
+    --diff-ink: #8a5800;
+    --font-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #11141b;
+      --surface: #191d26;
+      --ink: #e5e8ef;
+      --muted: #98a1b3;
+      --line: #394050;
+      --fill: #252a35;
+      --accent: #7fa8ff;
+      --diff: #33291a;
+      --diff-ink: #ffcf7a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #11141b;
+    --surface: #191d26;
+    --ink: #e5e8ef;
+    --muted: #98a1b3;
+    --line: #394050;
+    --fill: #252a35;
+    --accent: #7fa8ff;
+    --diff: #33291a;
+    --diff-ink: #ffcf7a;
+    color-scheme: dark;
+  }
+  html, body { background: var(--paper); color: var(--ink); }
+  body { font-family: var(--font-display); margin: 0; }
+  h1, h2, h3 { text-wrap: balance; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  /* Wireframe image placeholder: box with a cross */
+  .wf-img {
+    background:
+      linear-gradient(to top right, transparent calc(50% - 0.5px), var(--line) 50%, transparent calc(50% + 0.5px)),
+      linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--line) 50%, transparent calc(50% + 0.5px)),
+      var(--fill);
+  }
+  .annotate .wf-region { outline: 1.5px dashed var(--accent); outline-offset: 6px; }
+  .annotate header.wf-region { outline-offset: -3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-spin, .animate-pulse { animation: none !important; }
+  }
+  #boot { padding: 24px; font: 14px var(--font-display); color: var(--muted); }
+</style>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          paper: "var(--paper)",
+          surface: "var(--surface)",
+          ink: "var(--ink)",
+          muted: "var(--muted)",
+          line: "var(--line)",
+          fill: "var(--fill)",
+          accent: "var(--accent)",
+          diff: "var(--diff)",
+          "diff-ink": "var(--diff-ink)",
+        },
+        fontFamily: {
+          sans: ["var(--font-display)"],
+          mono: ["var(--font-mono)"],
+        },
+      },
+    },
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js"></script>
+</head>
+<body>
+<div id="root"><p id="boot">Loading wireframe…</p></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+/* ------------------------------------------------------------------ */
+/* Example data (clearly marked in the UI as example data)            */
+/* ------------------------------------------------------------------ */
+const EXAMPLE = {
+  a: {
+    slug: "spring-projects/spring-petclinic",
+    description: "A sample Spring-based application",
+    language: "Java",
+    branch: "main",
+    dependencies: 28,
+  },
+  b: {
+    slug: "spring-petclinic/spring-petclinic-rest",
+    description: "REST version of the Spring Petclinic sample application",
+    language: "Java",
+    branch: "master",
+    dependencies: 25,
+  },
+};
+
+const ROWS = [
+  { dep: "org.springframework.boot:spring-boot-starter-parent", a: "3.5.0", b: "3.4.2", status: "differs" },
+  { dep: "org.springdoc:springdoc-openapi-starter-webmvc-ui", a: "2.8.8", b: "2.8.4", status: "differs" },
+  { dep: "com.h2database:h2", a: "managed", b: "managed", status: "same" },
+  { dep: "org.webjars.npm:bootstrap", a: "5.3.6", b: "—", status: "only-a" },
+  { dep: "org.mapstruct:mapstruct", a: "—", b: "1.6.3", status: "only-b" },
+  { dep: "org.postgresql:postgresql", a: "managed", b: "managed", status: "same" },
+];
+
+const STATUS = {
+  same: { label: "Same", cls: "border-line text-muted" },
+  differs: { label: "Differs", cls: "border-diff-ink text-diff-ink bg-diff" },
+  "only-a": { label: "Only in A", cls: "border-accent text-accent" },
+  "only-b": { label: "Only in B", cls: "border-accent text-accent" },
+};
+
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "differs", label: "Differs" },
+  { id: "only-a", label: "Only in A" },
+  { id: "only-b", label: "Only in B" },
+];
+
+const REGIONS = [
+  { n: "01", name: "Top bar", note: "Logo, global search and account. Search collapses to an icon button below 640px; nav links hide below 1024px." },
+  { n: "02", name: "Compare bar", note: "Two entity inputs with a swap control and the primary Compare action. Inputs sit in one row from 768px and stack below." },
+  { n: "03", name: "Entity A panel", note: "Header, key facts and attribute list for the first entity." },
+  { n: "04", name: "Entity B panel", note: "Mirrors panel A field-for-field so rows line up. Side by side from 768px, stacked below." },
+  { n: "05", name: "Summary tiles", note: "Counts of the difference table by status. Four across from 1024px, two across below. Clicking a tile filters the table." },
+  { n: "06", name: "Difference table", note: "One row per attribute, with A and B values side by side. Scrolls sideways on narrow screens instead of wrapping." },
+];
+
+/* ------------------------------------------------------------------ */
+/* Small building blocks                                              */
+/* ------------------------------------------------------------------ */
+function Icon({ d, className = "h-4 w-4" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+const ICONS = {
+  search: "M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm10 2-4.35-4.35",
+  swap: "M7 16V4m0 0L3 8m4-4 4 4M17 8v12m0 0 4-4m-4 4-4-4",
+  compare: "M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5",
+};
+
+function Spinner({ className = "h-4 w-4" }) {
+  return (
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** A wireframe region: gets a dashed outline and a numbered tag when annotations are on. */
+function Region({ n, name, annotate, className = "", children, as: Tag = "section", tagBelow = false }) {
+  return (
+    <Tag className={`wf-region relative ${className}`} aria-label={name}>
+      {annotate && (
+        <span className={`absolute ${tagBelow ? "-bottom-3" : "-top-3"} left-3 z-10 rounded bg-accent px-1.5 py-0.5 font-mono text-[11px] font-medium text-surface`}>
+          {n} · {name}
+        </span>
+      )}
+      {children}
+    </Tag>
+  );
+}
+
+/** Grey text-line placeholder. */
+function Bar({ w = "w-full", h = "h-2.5" }) {
+  return <div className={`${w} ${h} rounded bg-fill`} />;
+}
+
+function BreakpointBadge() {
+  return (
+    <span className="whitespace-nowrap rounded-full border border-line px-2 py-0.5 font-mono text-[11px] text-muted">
+      <span className="sm:hidden">phone &lt;640</span>
+      <span className="hidden sm:inline lg:hidden">tablet 640–1023</span>
+      <span className="hidden lg:inline">desktop ≥1024</span>
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 01 Top bar                                                          */
+/* ------------------------------------------------------------------ */
+function TopBar({ annotate, setAnnotate }) {
+  return (
+    <Region n="01" name="Top bar" annotate={annotate} as="header" tagBelow className="sticky top-0 z-20 border-b border-line bg-surface">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
+        <div className="wf-img h-8 w-8 shrink-0 rounded" aria-hidden="true" />
+        <span className="font-semibold tracking-tight">CodeBridge</span>
+
+        <nav className="ml-4 hidden items-center gap-4 text-sm text-muted lg:flex" aria-label="Main">
+          <span className="font-medium text-ink underline decoration-accent decoration-2 underline-offset-[18px]">Compare</span>
+          <span>History</span>
+          <span>Settings</span>
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2">
+          <label className="relative hidden sm:block" htmlFor="global-search">
+            <span className="sr-only">Search repositories</span>
+            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"><Icon d={ICONS.search} /></span>
+            <input id="global-search" type="search" placeholder="Search repositories…"
+              className="h-9 w-48 rounded-md border border-line bg-paper pl-8 pr-3 text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent md:w-64" />
+          </label>
+          <button type="button" className="grid h-9 w-9 place-items-center rounded-md border border-line text-muted sm:hidden" aria-label="Search repositories">
+            <Icon d={ICONS.search} />
+          </button>
+
+          <BreakpointBadge />
+
+          <label htmlFor="annotate" className="flex cursor-pointer select-none items-center gap-2 text-xs text-muted">
+            <span className="hidden md:inline">Annotations</span>
+            <span className="relative inline-flex">
+              <input id="annotate" type="checkbox" className="peer sr-only" checked={annotate} onChange={(e) => setAnnotate(e.target.checked)} />
+              <span className="h-5 w-9 rounded-full border border-line bg-fill transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent" />
+              <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-surface shadow transition-transform peer-checked:translate-x-4" />
+            </span>
+          </label>
+
+          <div className="hidden h-8 w-8 rounded-full border border-line bg-fill sm:block" aria-label="Account" />
+        </div>
+      </div>
+    </Region>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 02 Compare bar                                                      */
+/* ------------------------------------------------------------------ */
+function CompareBar({ annotate, values, setValues, loading, onCompare }) {
+  const field = (key, label, tag) => (
+    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+      <label htmlFor={`entity-${key}`} className="flex items-center gap-2 text-xs font-medium text-muted">
+        <span className="grid h-5 w-5 place-items-center rounded border border-line font-mono text-[11px] text-ink">{tag}</span>
+        {label}
+      </label>
+      <input id={`entity-${key}`} value={values[key]} disabled={loading}
+        onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+        placeholder="owner/repo" spellCheck="false" autoComplete="off"
+        className="h-11 w-full rounded-md border border-line bg-surface px-3 font-mono text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60" />
+    </div>
+  );
+
+  return (
+    <Region n="02" name="Compare bar" annotate={annotate} className="rounded-lg border border-line bg-surface p-4 sm:p-5">
+      <form className="flex flex-col gap-3 md:flex-row md:items-end"
+        onSubmit={(e) => { e.preventDefault(); onCompare(); }}>
+        {field("a", "Entity A", "A")}
+        <button type="button" disabled={loading} aria-label="Swap entities"
+          onClick={() => setValues((v) => ({ a: v.b, b: v.a }))}
+          className="grid h-11 w-11 shrink-0 place-items-center self-center rounded-full border border-line text-muted hover:bg-fill disabled:opacity-60 md:self-end">
+          <Icon d={ICONS.swap} className="h-4 w-4 md:rotate-90" />
+        </button>
+        {field("b", "Entity B", "B")}
+        <button type="submit" disabled={loading}
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-ink px-5 text-sm font-semibold text-surface hover:opacity-90 disabled:opacity-70 md:w-36">
+          {loading ? <><Spinner /> Comparing…</> : <><Icon d={ICONS.compare} /> Compare</>}
+        </button>
+      </form>
+    </Region>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 03 / 04 Entity panels                                               */
+/* ------------------------------------------------------------------ */
+function EntityPanel({ n, tag, title, entity, loading, annotate }) {
+  const facts = [
+    { k: "Dependencies", v: entity.dependencies, big: true },
+    { k: "Language", v: entity.language },
+    { k: "Default branch", v: entity.branch, mono: true },
+  ];
+  return (
+    <Region n={n} name={`Entity ${tag} panel`} annotate={annotate} className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <div className="wf-img h-12 w-12 shrink-0 rounded-md" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-[11px] uppercase tracking-wider text-muted">Entity {tag} · {title}</p>
+          {loading ? (
+            <div className="mt-2 flex flex-col gap-2"><Bar w="w-3/4" h="h-4" /><Bar w="w-1/2" /></div>
+          ) : (
+            <>
+              <h3 className="mt-0.5 break-all font-mono text-base font-medium">{entity.slug || "owner/repo"}</h3>
+              <p className="mt-1 text-sm text-muted">{entity.description}</p>
+            </>
+          )}
+        </div>
+      </div>
+
+      <dl className="grid grid-cols-3 gap-2">
+        {facts.map((f) => (
+          <div key={f.k} className="min-w-0 rounded-md bg-fill px-3 py-2">
+            <dt className="truncate text-[11px] text-muted">{f.k}</dt>
+            <dd className={`mt-0.5 truncate ${f.big ? "text-xl font-semibold tabular" : "text-sm font-medium"} ${f.mono ? "font-mono" : ""}`}>
+              {loading ? <span className="mt-1 block"><Bar w="w-2/3" /></span> : f.v}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="flex flex-col gap-2.5 border-t border-dashed border-line pt-3">
+        <p className="text-xs font-medium text-muted">Attributes</p>
+        {[["w-4/5", "w-1/4"], ["w-3/5", "w-1/3"], ["w-2/3", "w-1/5"]].map(([a, b], i) => (
+          <div key={i} className="flex items-center justify-between gap-4"><Bar w={a} /><Bar w={b} /></div>
+        ))}
+      </div>
+    </Region>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 05 Summary tiles + 06 Difference table                              */
+/* ------------------------------------------------------------------ */
+function Summary({ annotate, filter, setFilter, loading }) {
+  const counts = ROWS.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] || 0) + 1 }), {});
+  const tiles = [
+    { id: "differs", label: "Differs", hint: "Same attribute, different value" },
+    { id: "only-a", label: "Only in A", hint: "Missing from entity B" },
+    { id: "only-b", label: "Only in B", hint: "Missing from entity A" },
+    { id: "same", label: "Same", hint: "Identical in both" },
+  ];
+  return (
+    <Region n="05" name="Summary tiles" annotate={annotate} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {tiles.map((t) => {
+        const active = filter === t.id;
+        return (
+          <button key={t.id} type="button" aria-pressed={active}
+            onClick={() => setFilter(active ? "all" : t.id)}
+            className={`flex flex-col items-start gap-1 rounded-lg border bg-surface p-4 text-left transition hover:border-accent ${active ? "border-accent ring-2 ring-accent" : "border-line"}`}>
+            <span className={`rounded border px-1.5 py-0.5 font-mono text-[11px] ${STATUS[t.id].cls}`}>{t.label}</span>
+            <span className="text-3xl font-semibold tabular">{loading ? "–" : counts[t.id] || 0}</span>
+            <span className="text-xs text-muted">{t.hint}</span>
+          </button>
+        );
+      })}
+    </Region>
+  );
+}
+
+function DiffTable({ annotate, filter, setFilter, loading, aLabel, bLabel }) {
+  const rows = ROWS.filter((r) => filter === "all" || r.status === filter);
+  return (
+    <Region n="06" name="Difference table" annotate={annotate} className="rounded-lg border border-line bg-surface">
+      <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div>
+          <h2 className="text-base font-semibold">Differences</h2>
+          <p className="text-xs text-muted">Showing {rows.length} of {ROWS.length} attributes · example data</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter rows">
+          {FILTERS.map((f) => (
+            <button key={f.id} type="button" onClick={() => setFilter(f.id)} aria-pressed={filter === f.id}
+              className={`rounded-full border px-3 py-1 text-xs font-medium ${filter === f.id ? "border-ink bg-ink text-surface" : "border-line text-muted hover:bg-fill"}`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b border-line text-left font-mono text-[11px] uppercase tracking-wider text-muted">
+              <th className="px-4 py-2.5 font-medium sm:px-5">Attribute</th>
+              <th className="px-4 py-2.5 font-medium">A · {aLabel}</th>
+              <th className="px-4 py-2.5 font-medium">B · {bLabel}</th>
+              <th className="px-4 py-2.5 text-right font-medium sm:px-5">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading
+              ? [0, 1, 2, 3].map((i) => (
+                  <tr key={i} className="border-b border-line last:border-0">
+                    <td className="px-4 py-3 sm:px-5"><Bar w="w-4/5" /></td>
+                    <td className="px-4 py-3"><Bar w="w-1/2" /></td>
+                    <td className="px-4 py-3"><Bar w="w-1/2" /></td>
+                    <td className="px-4 py-3 sm:px-5"><div className="ml-auto w-16"><Bar /></div></td>
+                  </tr>
+                ))
+              : rows.map((r) => (
+                  <tr key={r.dep} className={`border-b border-line last:border-0 ${r.status === "differs" ? "bg-diff" : ""}`}>
+                    <td className="px-4 py-3 font-mono text-xs sm:px-5">{r.dep}</td>
+                    <td className="px-4 py-3 font-mono text-xs tabular">{r.a}</td>
+                    <td className="px-4 py-3 font-mono text-xs tabular">{r.b}</td>
+                    <td className="px-4 py-3 text-right sm:px-5">
+                      <span className={`inline-block whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-[11px] ${STATUS[r.status].cls}`}>
+                        {STATUS[r.status].label}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+            {!loading && rows.length === 0 && (
+              <tr><td colSpan="4" className="px-5 py-8 text-center text-sm text-muted">No attributes match this filter.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Region>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Annotation legend                                                   */
+/* ------------------------------------------------------------------ */
+function Legend() {
+  return (
+    <section className="rounded-lg border border-dashed border-accent bg-surface p-4 sm:p-5" aria-label="Wireframe notes">
+      <h2 className="text-sm font-semibold">Wireframe notes</h2>
+      <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {REGIONS.map((r) => (
+          <li key={r.n} className="flex gap-3">
+            <span className="h-fit rounded bg-accent px-1.5 py-0.5 font-mono text-[11px] font-medium text-surface">{r.n}</span>
+            <div>
+              <p className="text-sm font-medium">{r.name}</p>
+              <p className="text-xs leading-relaxed text-muted">{r.note}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
+function App() {
+  const [annotate, setAnnotate] = useState(true);
+  const [values, setValues] = useState({ a: EXAMPLE.a.slug, b: EXAMPLE.b.slug });
+  const [shown, setShown] = useState({ a: EXAMPLE.a.slug, b: EXAMPLE.b.slug });
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const timer = useRef(null);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const onCompare = () => {
+    setLoading(true);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      setShown({ a: values.a.trim(), b: values.b.trim() });
+      setFilter("all");
+      setLoading(false);
+    }, 1200);
+  };
+
+  const short = (s) => (s.split("/")[1] || s || "—");
+
+  return (
+    <div className={annotate ? "annotate" : ""}>
+      <TopBar annotate={annotate} setAnnotate={setAnnotate} />
+
+      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Compare two repositories</h1>
+            <p className="text-sm text-muted">Responsive dashboard wireframe · React + Tailwind CSS</p>
+          </div>
+          <span className="rounded border border-line px-2 py-0.5 font-mono text-[11px] text-muted">Example data</span>
+        </div>
+
+        <CompareBar annotate={annotate} values={values} setValues={setValues} loading={loading} onCompare={onCompare} />
+
+        <div className="relative grid gap-4 md:grid-cols-2 md:gap-6">
+          <EntityPanel n="03" tag="A" title="existing" annotate={annotate} loading={loading}
+            entity={{ ...EXAMPLE.a, slug: shown.a }} />
+          <span aria-hidden="true"
+            className="absolute left-1/2 top-1/2 z-10 hidden h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface font-mono text-xs font-medium text-muted md:grid">
+            {loading ? <Spinner /> : "VS"}
+          </span>
+          <EntityPanel n="04" tag="B" title="incoming" annotate={annotate} loading={loading}
+            entity={{ ...EXAMPLE.b, slug: shown.b }} />
+        </div>
+
+        <Summary annotate={annotate} filter={filter} setFilter={setFilter} loading={loading} />
+
+        <DiffTable annotate={annotate} filter={filter} setFilter={setFilter} loading={loading}
+          aLabel={short(shown.a)} bLabel={short(shown.b)} />
+
+        {annotate && <Legend />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
